@@ -20,7 +20,7 @@ function App() {
     <AppProvider>
       <div className="container animate-fade-in">
         <header className="app-header">
-          <h1>Betting Tracker</h1>
+          <h1>Auction Tracker</h1>
           <div className="app-nav">
             <button 
               className={activeTab === 'setup' ? 'active' : ''} 

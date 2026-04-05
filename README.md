@@ -1,4 +1,4 @@
-# Betting Tracker
+# Auction Tracker
 
 A comprehensive React + Vite application for tracking custom sports/auction live bidding. It offers advanced state persistence, an intuitive dark-mode interface, real-time live bidding arenas, and admin overrides.
 
