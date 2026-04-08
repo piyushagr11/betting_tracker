@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { useAppContext } from '../context/AppContext';
 
 export default function Setup() {
-  const { addPlayer, addTeam, players, teams, resetAuction, clearAllData, addPlayersBatch, addTeamsBatch } = useAppContext();
+  const { addPlayer, addTeam, players, teams, resetAuction, clearAllData, addPlayersBatch, addTeamsBatch, getPlayerColorStyle } = useAppContext();
   
   const [playerInput, setPlayerInput] = useState({ name: '', minPrice: '', characteristics: '' });
   const [teamInput, setTeamInput] = useState({ name: '', initialBudget: '' });
@@ -162,7 +162,7 @@ export default function Setup() {
           <div className="text-muted text-sm mt-1 flex flex-col gap-2">
             {players.slice(-3).reverse().map(p => (
               <div key={p.id} className="flex justify-between items-center bg-elevated p-2 rounded">
-                <span>{p.name}</span>
+                <span style={getPlayerColorStyle(p.minPrice)}>{p.name}</span>
                 <span className="badge">Base: ₹ {p.minPrice}</span>
               </div>
             ))}

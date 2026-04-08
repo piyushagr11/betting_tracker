@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 
 export default function LiveBidding({ onDashboardSwitch }) {
-  const { players, teams, sellPlayer } = useAppContext();
-  
+  const { players, teams, sellPlayer, getPlayerColorStyle } = useAppContext();
+
   const availablePlayers = players
     .filter(p => p.status === 'available')
-    .sort((a, b) => a.name.localeCompare(b.name));
-    
+    .sort((a, b) => b.minPrice - a.minPrice || a.name.localeCompare(b.name));
+
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
-  
+
   // Create a local state to hold the bid inputs for each team easily
   const [teamBids, setTeamBids] = useState({});
 
@@ -19,12 +19,12 @@ export default function LiveBidding({ onDashboardSwitch }) {
 
   const handleSell = (team) => {
     const amount = Number(teamBids[team.id]);
-    
+
     if (!amount || amount <= 0) {
       alert("Please enter a valid bid amount.");
       return;
     }
-    
+
     const selectedPlayer = players.find(p => p.id === selectedPlayerId);
     if (!selectedPlayer) return;
 
@@ -40,7 +40,7 @@ export default function LiveBidding({ onDashboardSwitch }) {
 
     // Sell the player to this team
     sellPlayer(selectedPlayerId, team.id, amount);
-    
+
     // Clear the selection
     setSelectedPlayerId('');
     setTeamBids({});
@@ -70,22 +70,22 @@ export default function LiveBidding({ onDashboardSwitch }) {
     <div className="animate-fade-in">
       <div className="card mb-4 glass">
         <h3>Select Player for Bidding</h3>
-        <select 
-          className="mt-2" 
-          value={selectedPlayerId} 
+        <select
+          className="mt-2"
+          value={selectedPlayerId}
           onChange={e => setSelectedPlayerId(e.target.value)}
         >
           <option value="">-- Choose a Player --</option>
           {availablePlayers.map(p => (
-            <option key={p.id} value={p.id}>
-              {p.name} (Base: ₹ {p.minPrice})
+            <option key={p.id} value={p.id} style={getPlayerColorStyle(p.minPrice)}>
+              {p.name} (Base: ₹ {p.minPrice}){p.characteristics ? ` - ${p.characteristics}` : ''}
             </option>
           ))}
         </select>
 
         {selectedPlayer && (
           <div className="mt-4 p-4 bg-base rounded" style={{ backgroundColor: 'var(--bg-base)' }}>
-            <h2 className="text-xl text-primary">{selectedPlayer.name}</h2>
+            <h2 className="text-xl text-primary" style={getPlayerColorStyle(selectedPlayer.minPrice)}>{selectedPlayer.name}</h2>
             <div className="flex gap-4 mt-2">
               <span className="badge badge-success">Base Price: ₹ {selectedPlayer.minPrice}</span>
               {selectedPlayer.characteristics && (
@@ -103,43 +103,60 @@ export default function LiveBidding({ onDashboardSwitch }) {
             <div className="text-center text-muted">No teams added yet. Go to Setup to add teams.</div>
           ) : (
             <div className="grid-teams animate-fade-in">
-              {teams.map(team => {
-                 const currentRosterSize = players.filter(p => p.teamId === team.id).length;
+              {(() => {
+                const totalRemainingMoney = teams.reduce((acc, t) => acc + t.remainingBalance, 0);
+                const totalRemainingMinPrice = availablePlayers.reduce((acc, p) => acc + Number(p.minPrice || 0), 0) || 1;
+                const marketInflationRatio = totalRemainingMoney / totalRemainingMinPrice;
 
-                 return (
-                  <div key={team.id} className="card">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-lg">{team.name}</h4>
-                      <span className="badge">{currentRosterSize} Players</span>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <div className="text-sm text-muted">Remaining Balance</div>
-                      <div className={`text-xl font-bold ${team.remainingBalance > 0 ? 'text-success' : 'text-danger'}`}>
-                        ₹ {team.remainingBalance.toLocaleString()}
+                return teams.map(team => {
+                  const currentRosterSize = players.filter(p => p.teamId === team.id).length;
+
+                  // Calculate smart suggestion for this team
+                  const teamWealthMultiplier = totalRemainingMoney > 0 ? (team.remainingBalance / totalRemainingMoney) * teams.length : 1;
+                  const suggestedMaxBidRaw = Math.round(Number(selectedPlayer.minPrice || 0) * marketInflationRatio * teamWealthMultiplier);
+                  const smartSuggestion = Math.max(
+                    Number(selectedPlayer.minPrice || 0),
+                    Math.min(suggestedMaxBidRaw, team.remainingBalance)
+                  );
+
+                  return (
+                    <div key={team.id} className="card">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-lg">{team.name}</h4>
+                        <span className="badge">{currentRosterSize} Players</span>
+                      </div>
+
+                      <div className="mb-4">
+                        <div className="text-sm text-muted flex justify-between">
+                          <span>Remaining Balance</span>
+                          <span className="text-xs text-primary" title="Algorithmic suggested max bid based on market inflation and team wealth.">💎 Suggestion: ₹ {smartSuggestion.toLocaleString()}</span>
+                        </div>
+                        <div className={`text-xl font-bold ${team.remainingBalance > 0 ? 'text-success' : 'text-danger'}`}>
+                          ₹ {team.remainingBalance.toLocaleString()}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="number"
+                          placeholder={`Bid Amount (Base: ${selectedPlayer.minPrice})`}
+                          value={teamBids[team.id] || ''}
+                          onChange={e => handleBidChange(team.id, e.target.value)}
+                          min={selectedPlayer.minPrice}
+                          max={team.remainingBalance}
+                        />
+                        <button
+                          className="btn-primary w-full"
+                          onClick={() => handleSell(team)}
+                          disabled={team.remainingBalance < Number(selectedPlayer.minPrice)}
+                        >
+                          Sell to {team.name}
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex flex-col gap-2">
-                      <input 
-                        type="number" 
-                        placeholder="Bid Amount"
-                        value={teamBids[team.id] || ''}
-                        onChange={e => handleBidChange(team.id, e.target.value)}
-                        min={selectedPlayer.minPrice}
-                        max={team.remainingBalance}
-                      />
-                      <button 
-                        className="btn-primary w-full"
-                        onClick={() => handleSell(team)}
-                        disabled={team.remainingBalance < Number(selectedPlayer.minPrice)}
-                      >
-                        Sell to {team.name}
-                      </button>
-                    </div>
-                  </div>
-                 )
-              })}
+                  )
+                });
+              })()}
             </div>
           )}
         </>

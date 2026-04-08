@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 
 export default function AdminPanel() {
-  const { players, teams, updatePlayerPrice, updateTeamBudget, deletePlayer } = useAppContext();
+  const { players, teams, updatePlayerPrice, updateTeamBudget, deletePlayer, getPlayerColorStyle } = useAppContext();
   
   const [playerEdits, setPlayerEdits] = useState({});
   const [teamEdits, setTeamEdits] = useState({});
@@ -83,7 +83,7 @@ export default function AdminPanel() {
           {soldPlayers.map(p => (
             <div key={p.id} className="p-4 bg-base rounded border border-border" style={{ backgroundColor: 'var(--bg-base)', borderColor: 'var(--border)' }}>
               <div className="flex justify-between items-center mb-2">
-                <h4 className="text-lg">{p.name}</h4>
+                <h4 className="text-lg" style={getPlayerColorStyle(p.minPrice)}>{p.name}</h4>
                 <div className="text-sm text-muted text-right">
                   Sold to: {teams.find(t => t.id === p.teamId)?.name || 'Unknown'} <br/>
                   Current Rate: ₹ {p.finalPrice}

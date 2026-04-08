@@ -143,11 +143,41 @@ export function AppProvider({ children }) {
     }
   };
 
+  // Get unique base prices and sort them ascending
+  const uniquePrices = [...new Set(players.map(p => Number(p.minPrice) || 0))].sort((a, b) => a - b);
+
+  const getPlayerColorStyle = (price) => {
+    const p = Number(price) || 0;
+    
+    // If there's 1 or fewer variants, default to dull grey
+    if (uniquePrices.length <= 1) return { color: '#48484a' };
+    
+    const index = uniquePrices.indexOf(p);
+    const validIndex = index === -1 ? 0 : index;
+    
+    // Ratio ranges strictly from 0.0 (lowest variant) to 1.0 (highest variant)
+    // based ON the number of unique price variants!
+    const ratio = validIndex / (uniquePrices.length - 1);
+    
+    // Dynamic color from Dull Grey to Bright Red
+    // Lowest (ratio 0.0): hsl(50, 0%, 40%) -> Dull Grey
+    // Highest (ratio 1.0): hsl(0, 100%, 65%) -> Bright Red
+    const hue = 50 - (ratio * 50);
+    const saturation = ratio * 100;
+    const lightness = 40 + (ratio * 25);
+    
+    return { 
+      color: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+      textShadow: ratio === 1 ? `0 0 8px hsla(${hue}, ${saturation}%, ${lightness}%, 0.4)` : 'none'
+    };
+  };
+
   return (
     <AppContext.Provider value={{ 
       players, teams, addPlayer, addTeam, sellPlayer, 
       resetAuction, clearAllData, addPlayersBatch, addTeamsBatch,
-      updatePlayerPrice, updateTeamBudget, deletePlayer
+      updatePlayerPrice, updateTeamBudget, deletePlayer,
+      getPlayerColorStyle
     }}>
       {children}
     </AppContext.Provider>

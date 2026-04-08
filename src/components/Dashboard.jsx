@@ -1,7 +1,7 @@
 import { useAppContext } from '../context/AppContext';
 
 export default function Dashboard() {
-  const { players, teams } = useAppContext();
+  const { players, teams, getPlayerColorStyle } = useAppContext();
 
   if (teams.length === 0) {
     return (
@@ -34,6 +34,12 @@ export default function Dashboard() {
                   ₹ {Number(team.initialBudget).toLocaleString()}
                 </span>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted">Avg Spend/Player:</span>
+                <span className="font-bold text-muted">
+                  ₹ {Math.round(teamPlayers.length > 0 ? ((Number(team.initialBudget) - team.remainingBalance) / teamPlayers.length) : 0).toLocaleString()}
+                </span>
+              </div>
             </div>
 
             <h4 className="mb-2 text-sm text-muted uppercase tracking-wider">
@@ -49,7 +55,7 @@ export default function Dashboard() {
                 {teamPlayers.map(p => (
                   <div key={p.id} className="flex justify-between items-center bg-base p-2 rounded" style={{ backgroundColor: 'var(--bg-base)' }}>
                     <div>
-                      <div className="font-bold">{p.name}</div>
+                      <div className="font-bold" style={getPlayerColorStyle(p.minPrice)}>{p.name}</div>
                       {p.characteristics && <div className="text-xs text-muted">{p.characteristics}</div>}
                     </div>
                     <span className="text-sm badge badge-success text-right w-auto whitespace-nowrap">
