@@ -52,8 +52,8 @@ export default function AdminPanel() {
               <div className="flex justify-between items-center mb-2">
                 <h4 className="text-lg">{t.name}</h4>
                 <div className="text-sm text-muted text-right">
-                  Current Budget: ₹ {t.initialBudget}<br/>
-                  <span className={t.remainingBalance > 0 ? 'text-success' : 'text-danger'}>Remaining: ₹ {t.remainingBalance}</span>
+                  Current Budget: ₹ {Number(t.initialBudget).toLocaleString('en-IN')}<br/>
+                  <span className={t.remainingBalance > 0 ? 'text-success' : 'text-danger'}>Remaining: ₹ {Number(t.remainingBalance).toLocaleString('en-IN')}</span>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -86,7 +86,7 @@ export default function AdminPanel() {
                 <h4 className="text-lg" style={getPlayerColorStyle(p.minPrice)}>{p.name}</h4>
                 <div className="text-sm text-muted text-right">
                   Sold to: {teams.find(t => t.id === p.teamId)?.name || 'Unknown'} <br/>
-                  Current Rate: ₹ {p.finalPrice}
+                  Current Rate: ₹ {Number(p.finalPrice).toLocaleString('en-IN')}
                 </div>
               </div>
               <div className="flex gap-2">

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 
 export default function LiveBidding({ onDashboardSwitch }) {
-  const { players, teams, sellPlayer, getPlayerColorStyle } = useAppContext();
+  const { players, teams, settings, sellPlayer, getPlayerColorStyle } = useAppContext();
 
   const availablePlayers = players
     .filter(p => p.status === 'available')
@@ -29,7 +29,7 @@ export default function LiveBidding({ onDashboardSwitch }) {
     if (!selectedPlayer) return;
 
     if (amount < Number(selectedPlayer.minPrice)) {
-      alert(`Bid amount cannot be less than the base price of ₹ ${selectedPlayer.minPrice}`);
+      alert(`Bid amount cannot be less than the base price of ₹ ${Number(selectedPlayer.minPrice).toLocaleString('en-IN')}`);
       return;
     }
 
@@ -78,7 +78,7 @@ export default function LiveBidding({ onDashboardSwitch }) {
           <option value="">-- Choose a Player --</option>
           {availablePlayers.map(p => (
             <option key={p.id} value={p.id} style={getPlayerColorStyle(p.minPrice)}>
-              {p.name} (Base: ₹ {p.minPrice}){p.characteristics ? ` - ${p.characteristics}` : ''}
+              {p.name} (Base: ₹ {Number(p.minPrice).toLocaleString('en-IN')}){p.characteristics ? ` - ${p.characteristics}` : ''}
             </option>
           ))}
         </select>
@@ -87,7 +87,7 @@ export default function LiveBidding({ onDashboardSwitch }) {
           <div className="mt-4 p-4 bg-base rounded" style={{ backgroundColor: 'var(--bg-base)' }}>
             <h2 className="text-xl text-primary" style={getPlayerColorStyle(selectedPlayer.minPrice)}>{selectedPlayer.name}</h2>
             <div className="flex gap-4 mt-2">
-              <span className="badge badge-success">Base Price: ₹ {selectedPlayer.minPrice}</span>
+              <span className="badge badge-success">Base Price: ₹ {Number(selectedPlayer.minPrice).toLocaleString('en-IN')}</span>
               {selectedPlayer.characteristics && (
                 <span className="badge">{selectedPlayer.characteristics}</span>
               )}
@@ -108,16 +108,57 @@ export default function LiveBidding({ onDashboardSwitch }) {
                 const totalRemainingMinPrice = availablePlayers.reduce((acc, p) => acc + Number(p.minPrice || 0), 0) || 1;
                 const marketInflationRatio = totalRemainingMoney / totalRemainingMinPrice;
 
+                const maxTeamSize = Number(settings?.maxTeamSize) || 0;
+                let useSlotLogic = false;
+                let totalRemainingSlots = 0;
+
+                if (maxTeamSize > 0) {
+                  totalRemainingSlots = teams.reduce((acc, t) => {
+                    const rSize = players.filter(p => p.teamId === t.id).length;
+                    return acc + Math.max(0, maxTeamSize - rSize);
+                  }, 0);
+                  
+                  if (totalRemainingSlots > 0) {
+                    useSlotLogic = true;
+                  }
+                }
+
+                const marketWealthPerSlot = useSlotLogic ? (totalRemainingMoney / totalRemainingSlots) : 0;
+
                 return teams.map(team => {
                   const currentRosterSize = players.filter(p => p.teamId === team.id).length;
+                  const selectedBasePrice = Number(selectedPlayer.minPrice || 0);
 
-                  // Calculate smart suggestion for this team
-                  const teamWealthMultiplier = totalRemainingMoney > 0 ? (team.remainingBalance / totalRemainingMoney) * teams.length : 1;
-                  const suggestedMaxBidRaw = Math.round(Number(selectedPlayer.minPrice || 0) * marketInflationRatio * teamWealthMultiplier);
-                  const smartSuggestion = Math.max(
-                    Number(selectedPlayer.minPrice || 0),
-                    Math.min(suggestedMaxBidRaw, team.remainingBalance)
-                  );
+                  let smartSuggestion = 0;
+
+                  if (useSlotLogic) {
+                    const slotsRemaining = Math.max(0, maxTeamSize - currentRosterSize);
+                    
+                    if (slotsRemaining === 0) {
+                      smartSuggestion = 0; // Team is full
+                    } else {
+                      const teamWealthPerSlot = team.remainingBalance / slotsRemaining;
+                      const slotWealthMultiplier = marketWealthPerSlot > 0 ? (teamWealthPerSlot / marketWealthPerSlot) : 1;
+                      
+                      const suggestedMaxBidRaw = Math.round(selectedBasePrice * marketInflationRatio * slotWealthMultiplier);
+                      
+                      const minBasePriceInMarket = availablePlayers.length > 0 ? Math.min(...availablePlayers.map(p => Number(p.minPrice || 0))) : 0;
+                      const requiredReserve = (slotsRemaining - 1) * minBasePriceInMarket;
+                      const absoluteMaxBid = team.remainingBalance - requiredReserve;
+                      
+                      smartSuggestion = Math.max(
+                        selectedBasePrice, 
+                        Math.min(suggestedMaxBidRaw, absoluteMaxBid, team.remainingBalance)
+                      );
+                    }
+                  } else {
+                    const teamWealthMultiplier = totalRemainingMoney > 0 ? (team.remainingBalance / totalRemainingMoney) * teams.length : 1;
+                    const suggestedMaxBidRaw = Math.round(selectedBasePrice * marketInflationRatio * teamWealthMultiplier);
+                    smartSuggestion = Math.max(
+                      selectedBasePrice,
+                      Math.min(suggestedMaxBidRaw, team.remainingBalance)
+                    );
+                  }
 
                   return (
                     <div key={team.id} className="card">
@@ -129,17 +170,17 @@ export default function LiveBidding({ onDashboardSwitch }) {
                       <div className="mb-4">
                         <div className="text-sm text-muted flex justify-between">
                           <span>Remaining Balance</span>
-                          <span className="text-xs text-primary" title="Algorithmic suggested max bid based on market inflation and team wealth.">💎 Suggestion: ₹ {smartSuggestion.toLocaleString()}</span>
+                          <span className="text-xs text-primary" title="Algorithmic suggested max bid based on market inflation and team wealth.">💎 Suggestion: ₹ {smartSuggestion.toLocaleString('en-IN')}</span>
                         </div>
                         <div className={`text-xl font-bold ${team.remainingBalance > 0 ? 'text-success' : 'text-danger'}`}>
-                          ₹ {team.remainingBalance.toLocaleString()}
+                          ₹ {team.remainingBalance.toLocaleString('en-IN')}
                         </div>
                       </div>
 
                       <div className="flex flex-col gap-2">
                         <input
                           type="number"
-                          placeholder={`Bid Amount (Base: ${selectedPlayer.minPrice})`}
+                          placeholder={`Bid Amount (Base: ${Number(selectedPlayer.minPrice).toLocaleString('en-IN')})`}
                           value={teamBids[team.id] || ''}
                           onChange={e => handleBidChange(team.id, e.target.value)}
                           min={selectedPlayer.minPrice}

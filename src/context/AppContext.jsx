@@ -14,6 +14,11 @@ export function AppProvider({ children }) {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('bt_settings');
+    return saved ? JSON.parse(saved) : { maxTeamSize: '' };
+  });
+
   // Save to local storage whenever state changes
   useEffect(() => {
     localStorage.setItem('bt_players', JSON.stringify(players));
@@ -23,7 +28,14 @@ export function AppProvider({ children }) {
     localStorage.setItem('bt_teams', JSON.stringify(teams));
   }, [teams]);
 
+  useEffect(() => {
+    localStorage.setItem('bt_settings', JSON.stringify(settings));
+  }, [settings]);
+
   // Actions
+  const updateSettings = (newSettings) => {
+    setSettings(prev => ({ ...prev, ...newSettings }));
+  };
   const addPlayer = (player) => {
     setPlayers(prev => [...prev, { ...player, id: Date.now().toString(), status: 'available', teamId: null, finalPrice: null }]);
   };
@@ -174,10 +186,10 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{ 
-      players, teams, addPlayer, addTeam, sellPlayer, 
+      players, teams, settings, addPlayer, addTeam, sellPlayer, 
       resetAuction, clearAllData, addPlayersBatch, addTeamsBatch,
       updatePlayerPrice, updateTeamBudget, deletePlayer,
-      getPlayerColorStyle
+      getPlayerColorStyle, updateSettings
     }}>
       {children}
     </AppContext.Provider>

@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { useAppContext } from '../context/AppContext';
 
 export default function Setup() {
-  const { addPlayer, addTeam, players, teams, resetAuction, clearAllData, addPlayersBatch, addTeamsBatch, getPlayerColorStyle } = useAppContext();
+  const { addPlayer, addTeam, players, teams, resetAuction, clearAllData, addPlayersBatch, addTeamsBatch, getPlayerColorStyle, settings, updateSettings } = useAppContext();
   
   const [playerInput, setPlayerInput] = useState({ name: '', minPrice: '', characteristics: '' });
   const [teamInput, setTeamInput] = useState({ name: '', initialBudget: '' });
@@ -163,7 +163,7 @@ export default function Setup() {
             {players.slice(-3).reverse().map(p => (
               <div key={p.id} className="flex justify-between items-center bg-elevated p-2 rounded">
                 <span style={getPlayerColorStyle(p.minPrice)}>{p.name}</span>
-                <span className="badge">Base: ₹ {p.minPrice}</span>
+                <span className="badge">Base: ₹ {Number(p.minPrice).toLocaleString('en-IN')}</span>
               </div>
             ))}
             {players.length > 3 && <div className="text-center text-sm">...and {players.length - 3} more</div>}
@@ -212,12 +212,28 @@ export default function Setup() {
             {teams.slice(-3).reverse().map(t => (
               <div key={t.id} className="flex justify-between items-center bg-elevated p-2 rounded">
                 <span>{t.name}</span>
-                <span className="badge badge-success">Budget: ₹ {t.initialBudget}</span>
+                <span className="badge badge-success">Budget: ₹ {Number(t.initialBudget).toLocaleString('en-IN')}</span>
               </div>
             ))}
             {teams.length > 3 && <div className="text-center text-sm">...and {teams.length - 3} more</div>}
             {teams.length === 0 && <span>No teams added yet.</span>}
           </div>
+        </div>
+      </div>
+
+      {/* Auction Settings Card */}
+      <div className="card mb-4" style={{ gridColumn: '1 / -1' }}>
+        <h3>Auction Settings</h3>
+        <div className="form-group mt-2" style={{ maxWidth: '400px' }}>
+          <label>Max Team Size (Optional)</label>
+          <input 
+            type="number" 
+            placeholder="e.g. 15"
+            value={settings?.maxTeamSize || ''}
+            onChange={e => updateSettings({ maxTeamSize: e.target.value })}
+            min="1"
+          />
+          <p className="text-xs text-muted mt-1">Setting this will improve the smart suggestion algorithm based on how many slots a team needs to fill.</p>
         </div>
       </div>
 

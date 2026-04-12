@@ -25,19 +25,19 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted">Remaining:</span>
                 <span className={`text-xl font-bold ${team.remainingBalance > 0 ? 'text-success' : 'text-danger'}`}>
-                  ₹ {team.remainingBalance.toLocaleString()}
+                  ₹ {team.remainingBalance.toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted">Budget:</span>
                 <span className="font-bold text-muted">
-                  ₹ {Number(team.initialBudget).toLocaleString()}
+                  ₹ {Number(team.initialBudget).toLocaleString('en-IN')}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted">Avg Spend/Player:</span>
                 <span className="font-bold text-muted">
-                  ₹ {Math.round(teamPlayers.length > 0 ? ((Number(team.initialBudget) - team.remainingBalance) / teamPlayers.length) : 0).toLocaleString()}
+                  ₹ {Math.round(teamPlayers.length > 0 ? ((Number(team.initialBudget) - team.remainingBalance) / teamPlayers.length) : 0).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -59,7 +59,7 @@ export default function Dashboard() {
                       {p.characteristics && <div className="text-xs text-muted">{p.characteristics}</div>}
                     </div>
                     <span className="text-sm badge badge-success text-right w-auto whitespace-nowrap">
-                      ₹ {p.finalPrice}
+                      ₹ {Number(p.finalPrice).toLocaleString('en-IN')}
                     </span>
                   </div>
                 ))}
